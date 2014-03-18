@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 namespace LargeFileSplitter
 {
     class Program
@@ -11,17 +13,41 @@ namespace LargeFileSplitter
         static void Main(string[] args)
         {
             HandleHelp(args);
-            ParseJob job = BuildParseJob(args);
-            SplitFile(job);
-            ShowMsgAndQuit("Done. Press Enter.");
+            SplitJob job = BuildSplitJob(args);
+            var fileOps = new FileOps(job);
+            try
+            {
+                fileOps.SplitFile();
+            }
+            catch (System.IO.IOException ioe)
+            {
+                ShowMsgAndQuit(ioe.ToString());
+            }
+            ShowMsgAndQuit(string.Format("Done. Created {0} files. Press Enter to quit.",fileOps.NumFilesCreated));
         }
-     
-        static ParseJob BuildParseJob(string[] args)
+
+        /// <summary>
+        /// Take a user's argument that's supposed to be an integer. If it parses as an int, return it as an int. If not, use the application's default. If it's a decimal, that'll use the app default.
+        /// </summary>
+        /// <param name="input">An argument from the user that may or may not hold an int,</param>
+        /// <returns>An integer with the value supplied by the user</returns>
+        static int NumberOrAppDefault(string input)
         {
-            ParseJob job = new ParseJob();
+            int num;
+            return (int.TryParse(input, out num)) ? num : DefaultNumFilesToCreate;
+        }
+
+        /// <summary>
+        /// Analyze the input from the user. Ensure all args are valid to continue. If any args are invalid, then show a message to the user and cause the app to exit.
+        /// </summary>
+        /// <param name="args">All the args given by the user</param>
+        /// <returns>An object populated with the file to split, and the number of files to split to.</returns>
+        static SplitJob BuildSplitJob(string[] args)
+        {
+            SplitJob job = new SplitJob();
 
             if (args.FirstOrDefault() != null) { job.FileToSplit = args.First(); }
-            if (args.LastOrDefault() != null) { job.NumFilesToCreate = int.Parse(args[1]); }
+            if (args.LastOrDefault() != null) { job.NumFilesToCreate = NumberOrAppDefault(args.LastOrDefault()); }
 
             if (string.IsNullOrEmpty(job.FileToSplit))
             {
@@ -38,30 +64,16 @@ namespace LargeFileSplitter
             {
                 Console.WriteLine("How many files would you like this split into?");
                 string numFiles = Console.ReadLine();
-                int num;
-                job.NumFilesToCreate = (int.TryParse(numFiles, out num)) ? num : 2;
-                Console.WriteLine(string.Format("Splitting into {0} files.", job.NumFilesToCreate));
+                job.NumFilesToCreate = NumberOrAppDefault(numFiles);
+                Console.WriteLine(string.Format("Attempting to split into {0} files.", job.NumFilesToCreate));
             }
             return job;
         }
 
-        static void SplitFile(ParseJob job)
-        {
-            string[] allLines = File.ReadAllLines(job.FileToSplit);
-            string csvHeader = allLines.First();
-            job.LinesPerFile = (allLines.Length / job.NumFilesToCreate);
-
-            for (int i = 0; i < job.NumFilesToCreate; i++)
-            {
-                int startAt = Convert.ToInt32(i * job.LinesPerFile) + 1;
-                string newFile = Path.Combine(job.WriteDir, Path.GetFileNameWithoutExtension(job.FileToSplit) + i.ToString() + Path.GetExtension(job.FileToSplit));
-
-                List<string> newFileContents = new List<string> { csvHeader };
-                newFileContents.AddRange(allLines.Skip(startAt).Take(job.LinesPerFile));
-                File.WriteAllLines(newFile, newFileContents.ToArray());
-            }
-        }
-
+        /// <summary>
+        /// Show a message to the console and quit the program.
+        /// </summary>
+        /// <param name="msg">A message to show the user.</param>
         private static void ShowMsgAndQuit(string msg)
         {
             Console.WriteLine(msg);
@@ -69,6 +81,10 @@ namespace LargeFileSplitter
             Environment.Exit(0);
         }
 
+        /// <summary>
+        /// Detect whether the 'help' param was supplied. Detects for /? being the first argument. If found, show the help text for the user.
+        /// </summary>
+        /// <param name="args">All args passed to the app.</param>
         private static void HandleHelp(string[] args)
         {
             if (args.FirstOrDefault() == "/?")
