@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30110.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LargeFileSplitter", "LargeFileSplitter.csproj", "{93322CCA-D6F7-4F88-91E5-6FE42DC3131A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LargeFileSplitter", "Console\LargeFileSplitter.csproj", "{93322CCA-D6F7-4F88-91E5-6FE42DC3131A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
