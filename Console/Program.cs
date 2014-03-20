@@ -1,29 +1,34 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 namespace LargeFileSplitter
 {
     class Program
     {
         const int DefaultNumFilesToCreate = 2;
+        const string HelpArg = "/?";
+        static char[] FilePathDelimiters = new[] { '"' };
 
         static void Main(string[] args)
         {
             HandleHelp(args);
             SplitJob job = BuildSplitJob(args);
+            var sw = Stopwatch.StartNew();
+
             var fileOps = new FileOps(job);
             try
             {
-                fileOps.SplitFile();
+                fileOps.SplitSourceFileToMultiples();
+                sw.Stop();
+
+                Console.WriteLine(UserMessages.TimeSpent.FormatWith(sw.Elapsed.TotalSeconds));
             }
             catch (System.IO.IOException ioe)
             {
                 ShowMsgAndQuit(ioe.ToString());
             }
-            ShowMsgAndQuit(string.Format("Done. Created {0} files. Press Enter to quit.",fileOps.NumFilesCreated));
+            ShowMsgAndQuit(UserMessages.CompletedFileCreation.FormatWith(fileOps.NumFilesCreated));
         }
 
         /// <summary>
@@ -49,25 +54,52 @@ namespace LargeFileSplitter
             if (args.FirstOrDefault() != null) { job.FileToSplit = args.First(); }
             if (args.LastOrDefault() != null) { job.NumFilesToCreate = NumberOrAppDefault(args.LastOrDefault()); }
 
+            EnsureGoodFileArg(job);
+            EnsureGoodNumFilesArg(job);
+            return job;
+        }
+
+        /// <summary>
+        /// If the file to split is missing, prompt the user. Clean the arg of delimiters. Ensure that the file exists.
+        /// </summary>
+        /// <param name="job"></param>
+        private static void EnsureGoodFileArg(SplitJob job)
+        {
             if (string.IsNullOrEmpty(job.FileToSplit))
             {
-                Console.WriteLine("Which file would you like to split?");
-                job.FileToSplit = Console.ReadLine();
-                job.FileToSplit = job.FileToSplit.Trim(new[] { '"' });
-                if (File.Exists(job.FileToSplit) == false)
-                {
-                    ShowMsgAndQuit("Couldn't find that file. We're done here.");
-                }
+                job.FileToSplit = PromptUserForAnswer(UserMessages.AskWhichFile);
             }
+            job.FileToSplit = job.FileToSplit.Trim(FilePathDelimiters);
 
+            if (File.Exists(job.FileToSplit) == false)
+            {
+                ShowMsgAndQuit(UserMessages.CannotFindFile);
+            }
+        }
+
+        /// <summary>
+        /// Prompt the user if no number of files exists.
+        /// </summary>
+        /// <param name="job"></param>
+        private static void EnsureGoodNumFilesArg(SplitJob job)
+        {
             if (job.NumFilesToCreate == 0)
             {
-                Console.WriteLine("How many files would you like this split into?");
-                string numFiles = Console.ReadLine();
+                string numFiles = PromptUserForAnswer(UserMessages.AskHowManyFiles);
                 job.NumFilesToCreate = NumberOrAppDefault(numFiles);
-                Console.WriteLine(string.Format("Attempting to split into {0} files.", job.NumFilesToCreate));
+                Console.WriteLine(UserMessages.MsgAttemptingToSplit.FormatWith(job.NumFilesToCreate));
             }
-            return job;
+        }
+
+        /// <summary>
+        /// Show a message to the user on the console, and take in a response.
+        /// </summary>
+        /// <param name="question">The question/statment to show the user.</param>
+        /// <returns>An answer given by the user.</returns>
+        private static string PromptUserForAnswer(string question)
+        {
+            Console.WriteLine(question);
+            return Console.ReadLine();
         }
 
         /// <summary>
@@ -87,10 +119,9 @@ namespace LargeFileSplitter
         /// <param name="args">All args passed to the app.</param>
         private static void HandleHelp(string[] args)
         {
-            if (args.FirstOrDefault() == "/?")
+            if (args.FirstOrDefault() == HelpArg)
             {
-                string msg = string.Format(@"Arg 1 is the file you want to split.{0}Arg 2 is the number of files to create when splitting the content of the target.{0}If a non-int value is taken, the app defaults to {1}{0}e.g.{0}this.exe ""C:\path\to\file.txt"" 5", Environment.NewLine, DefaultNumFilesToCreate);
-                ShowMsgAndQuit(msg);
+                ShowMsgAndQuit(UserMessages.Help.FormatWith(Environment.NewLine, DefaultNumFilesToCreate));
             }
         }
     }
