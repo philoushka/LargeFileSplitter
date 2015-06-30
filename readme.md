@@ -9,7 +9,7 @@ Sometimes you're dealing with a large text file that cannot load well in a text 
 
 This application splits on **rows** or lines in the file. The original file isn't modified or deleted in any way.
  
-### [Download this application (39KB)](https://github.com/philoushka/LargeFileSplitter/blob/master/CompiledBinary/LargeFileSplitter.exe) ###
+### [Download this application (11 KB)](https://github.com/philoushka/LargeFileSplitter/releases/download/v1.1/LargeFileSplitter.exe) ###
  
 ####Running The Splitter App####
 
