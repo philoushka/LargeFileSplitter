@@ -23,10 +23,13 @@ The application will ask you for 2 pieces of information:
 **Sending Arguments**
 
 You can pass these 2 values as arguments to the app from the command line.
+
 ![](readme/cli.png)
 
 **Running Interactively**
+
 You can run the console app directly in Windows, and it'll prompt you for the 2 arguments it'll need.
+
 ![](readme/console.png)
 
 ####Notes####
