@@ -9,6 +9,8 @@ Sometimes you're dealing with a large text file that cannot load well in a text 
 
 This application splits on **rows** or lines in the file. The original file isn't modified or deleted in any way.
  
+### [Download this application (39KB)](https://github.com/philoushka/LargeFileSplitter/blob/master/CompiledBinary/LargeFileSplitter.exe) ###
+ 
 ####Running The Splitter App####
 
 **The only requirement**: You'll need .NET Framework 4.5 installed on the machine.
