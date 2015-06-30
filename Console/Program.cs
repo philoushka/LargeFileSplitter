@@ -24,7 +24,7 @@ namespace LargeFileSplitter
 
                 Console.WriteLine(UserMessages.TimeSpent.FormatWith(sw.Elapsed.TotalSeconds));
             }
-            catch (System.IO.IOException ioe)
+            catch (IOException ioe)
             {
                 ShowMsgAndQuit(ioe.ToString());
             }
@@ -49,10 +49,17 @@ namespace LargeFileSplitter
         /// <returns>An object populated with the file to split, and the number of files to split to.</returns>
         static SplitJob BuildSplitJob(string[] args)
         {
-            SplitJob job = new SplitJob();
+            var job = new SplitJob();
 
-            if (args.FirstOrDefault() != null) { job.FileToSplit = args.First(); }
-            if (args.LastOrDefault() != null) { job.NumFilesToCreate = NumberOrAppDefault(args.LastOrDefault()); }
+            if (args.FirstOrDefault() != null)
+            {
+                job.FileToSplit = args.First();
+
+            }
+            if (args.LastOrDefault() != null)
+            {
+                job.NumFilesToCreate = NumberOrAppDefault(args.LastOrDefault());
+            }
 
             EnsureGoodFileArg(job);
             EnsureGoodNumFilesArg(job);
@@ -62,10 +69,10 @@ namespace LargeFileSplitter
         /// <summary>
         /// If the file to split is missing, prompt the user. Clean the arg of delimiters. Ensure that the file exists.
         /// </summary>
-        /// <param name="job"></param>
+        /// <param name="job">The job to analyze</param>
         private static void EnsureGoodFileArg(SplitJob job)
         {
-            if (string.IsNullOrEmpty(job.FileToSplit))
+            if (job.FileToSplit.IsNullOrEmpty())
             {
                 job.FileToSplit = PromptUserForAnswer(UserMessages.AskWhichFile);
             }
@@ -80,7 +87,6 @@ namespace LargeFileSplitter
         /// <summary>
         /// Prompt the user if no number of files exists.
         /// </summary>
-        /// <param name="job"></param>
         private static void EnsureGoodNumFilesArg(SplitJob job)
         {
             if (job.NumFilesToCreate == 0)

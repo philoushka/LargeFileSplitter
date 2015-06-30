@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LargeFileSplitter
 {
@@ -14,23 +11,21 @@ namespace LargeFileSplitter
         private IEnumerable<string> AllLinesToWrite { get; set; }
 
         SplitJob Job { get; set; }
+        
         /// <summary>
-        /// Read the source file and split into 
+        /// Read the source file and split into a files.
         /// </summary>
         /// <param name="job"></param>
-
         public FileOps(SplitJob job)
         {
             this.Job = job;
             AllLinesToWrite = ReadFile(Job.FileToSplit);
             Job.TotalLines = AllLinesToWrite.Count();
         }
-        
+
         /// <summary>
         /// Read the contents of the file from disk.
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
         public IEnumerable<string> ReadFile(string filePath)
         {
             try
@@ -38,7 +33,7 @@ namespace LargeFileSplitter
                 return File.ReadLines(filePath).ToList();
             }
             catch (System.OutOfMemoryException)
-            {                
+            {
                 return File.ReadLines(filePath);
             }
         }
@@ -50,27 +45,33 @@ namespace LargeFileSplitter
         {
             if (AllLinesToWrite.Any() == false) return;
             string header = AllLinesToWrite.First();
-            foreach (int i in Enumerable.Range(1, Job.NumFilesToCreate))
+            foreach (int fileNumber in Enumerable.Range(1, Job.NumFilesToCreate))
             {
-                FileInfo baseFile = new FileInfo(Job.FileToSplit);
-                string newFile = Path.Combine(baseFile.DirectoryName, "{0}-{1}".FormatWith(i, baseFile.Name));
-
-                //always skip the header, the batches previously taken + 1 for the header.
-                //First iteration, skip none.
-                int skip = ((i - 1) * Job.LinesPerFile + 1);
-
-                List<string> newFileContents = AllLinesToWrite.Skip(skip).Take(Job.LinesPerFile).ToList();
-
-                //write the file when there are new contents to be written. we may have the case where we don't need to create empty files if the user
-                //has specified more files than we need.
-                if (newFileContents.Any())
-                {
-                    newFileContents.Insert(0, header);
-                    File.WriteAllLines(newFile, newFileContents);
-                    NumFilesCreated++;
-                }
+                WriteItemsToNewFile(header, fileNumber);
             }
         }
 
+        private void WriteItemsToNewFile(string header, int fileNumber)
+        {
+            FileInfo baseFile = new FileInfo(Job.FileToSplit);
+            string newFileName = Path.Combine(baseFile.DirectoryName, "{0}-{1}".FormatWith(fileNumber, baseFile.Name));
+
+            //always skip the header, the batches previously taken + 1 for the header.
+            //First iteration, skip none.
+            int skip = ((fileNumber - 1) * Job.LinesPerFile + 1);
+
+            List<string> newFileContents = AllLinesToWrite.Skip(skip).Take(Job.LinesPerFile).ToList();
+
+            //write the file when there are new contents to be written. we may have the case where we don't need to create empty files if the user
+            //has specified more files than we need.
+            if (newFileContents.Any())
+            {
+                newFileContents.Insert(0, header);
+                //remove the newline on the last item to ensure that an empty line isn't in the new file.
+                newFileContents[newFileContents.Count - 1] = newFileContents.Last().Replace(Environment.NewLine, "");
+                File.WriteAllLines(newFileName, newFileContents);
+                NumFilesCreated++;
+            }
+        }
     }
 }
